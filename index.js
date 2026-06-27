@@ -95,5 +95,25 @@ function sendSoButton(psid) {
 
 app.get('/', (req, res) => res.send('Webhook server is running.'));
 
+// ---------- DEBUG: tự subscribe Page vào App ----------
+app.get('/subscribe', (req, res) => {
+  const PAGE_ID = '683296664869587';
+  const url = GRAPH + '/' + PAGE_ID + '/subscribed_apps'
+    + '?subscribed_fields=messages,messaging_postbacks,messaging_referrals'
+    + '&access_token=' + PAGE_ACCESS_TOKEN;
+  fetch(url, { method: 'POST' })
+    .then(r => r.json())
+    .then(d => res.json({ buoc: 'subscribe', ketqua: d }))
+    .catch(e => res.json({ loi: e.toString() }));
+});
+
+// ---------- DEBUG: kiểm tra token đang giữ là Page nào ----------
+app.get('/checktoken', (req, res) => {
+  fetch(GRAPH + '/me?access_token=' + PAGE_ACCESS_TOKEN)
+    .then(r => r.json())
+    .then(d => res.json({ token_thuoc_ve: d }))
+    .catch(e => res.json({ loi: e.toString() }));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Server on ' + PORT));
