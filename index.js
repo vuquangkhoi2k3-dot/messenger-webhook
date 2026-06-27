@@ -32,25 +32,31 @@ app.get('/webhook', (req, res) => {
 
 // ---------- 2. Nhận sự kiện từ Meta ----------
 app.post('/webhook', (req, res) => {
-  // verify chữ ký
+  console.log('>>> POST /webhook nhận được lúc', new Date().toISOString());
+  console.log('>>> BODY:', JSON.stringify(req.body));
+
+  // verify chữ ký (chỉ cảnh báo, KHÔNG chặn - để debug)
   if (APP_SECRET) {
     const sig = req.headers['x-hub-signature-256'];
-    if (!sig) return res.sendStatus(401);
-    const expected = 'sha256=' + crypto.createHmac('sha256', APP_SECRET)
-      .update(req.rawBody).digest('hex');
-    if (sig !== expected) { console.log('BAD SIGNATURE'); return res.sendStatus(401); }
+    if (sig) {
+      const expected = 'sha256=' + crypto.createHmac('sha256', APP_SECRET)
+        .update(req.rawBody).digest('hex');
+      if (sig !== expected) console.log('>>> CANH BAO: chu ky khong khop (van xu ly)');
+    } else {
+      console.log('>>> Khong co chu ky x-hub-signature-256');
+    }
   }
 
   const body = req.body;
-  if (body.object !== 'page') return res.sendStatus(404);
+  if (body.object !== 'page') { console.log('>>> object khong phai page:', body.object); return res.sendStatus(404); }
 
   body.entry.forEach(entry => {
     const event = entry.messaging && entry.messaging[0];
-    if (!event) return;
+    if (!event) { console.log('>>> entry khong co messaging'); return; }
     const psid = event.sender && event.sender.id;
-    if (!psid) return;
+    if (!psid) { console.log('>>> khong co psid'); return; }
+    console.log('>>> PSID:', psid, '| co message:', !!event.message, '| postback:', !!event.postback, '| referral:', !!event.referral);
 
-    // khách nhắn tin / bấm vào ad / bấm get started  -> gửi nút xem sổ
     if (event.message || event.postback || event.referral) {
       sendSoButton(psid);
     }
